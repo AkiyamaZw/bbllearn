@@ -53,7 +53,7 @@
 
         // Add your code here matching the playground format
         const createScene = () => {
-            var scene = new BABYLON.Scene(engine);
+            scene = new BABYLON.Scene(engine);
             var camera = new BABYLON.ArcRotateCamera("main_camera", -Math.PI / 2, Math.PI / 2.5, 15, new BABYLON.Vector3(0, 0, 0));
             camera.attachControl(canvas, true);
 
@@ -62,9 +62,14 @@
             const ground = buildGround(20, 20);
 
             const detached_house = buildHourse(1);
+            detached_house.rotation.y = -Math.PI;
+            detached_house.position.x = -6.8;
+            detached_house.position.z = 2.5;
 
             const semi_house = buildHourse(2);
-
+            semi_house.rotation.y = -Math.PI / 16;
+            semi_house.position.x = -4.5;
+            semi_house.position.z = 3;
 
             const places = []; //each entry is an array [house type, rotation, x, z]
             places.push([1, -Math.PI / 16, -6.8, 2.5]);
@@ -97,6 +102,8 @@
                 houses[i].position.x = places[i][2];
                 houses[i].position.z = places[i][3];
             }
+
+            buildPolyCar();
 
             return scene;
         }
@@ -146,6 +153,72 @@
             ground_mat.diffuseTexture = ground_tex;
             ground.material = ground_mat;
             return ground;
+        }
+
+        const buildPolyCar = () => {
+            const faceUV = [];
+            faceUV[0] = new BABYLON.Vector4(0, 0.5, 0.38, 1);
+            faceUV[1] = new BABYLON.Vector4(0, 0, 1, 0.5);
+            faceUV[2] = new BABYLON.Vector4(0.38, 1, 0, 0.5);
+            const car_body = BABYLON.MeshBuilder.CreateBox("car_body", { height: 1, width: 1, depth: 2, faceUV: faceUV }, scene);
+            car_body.position.y = 0.75;
+            car_body.position.x = 2;
+
+            const wheelUV = [];
+            wheelUV[0] = new BABYLON.Vector4(0, 0, 1, 1);
+            wheelUV[1] = new BABYLON.Vector4(0, 0.5, 0, 0.5);
+            wheelUV[2] = new BABYLON.Vector4(0, 0, 1, 1);
+
+
+            const wheel_bl = BABYLON.MeshBuilder.CreateCylinder("wheel_bl", { diameter: 0.5, height: 0.1, faceUV: wheelUV }, scene);
+            wheel_bl.parent = car_body;
+            wheel_bl.rotation.z = Math.PI / 2;
+            wheel_bl.position.y = -0.5;
+            wheel_bl.position.x = 0.5;
+            wheel_bl.position.z = 0.4;
+
+            const wheel_mat = new BABYLON.StandardMaterial("wheel_mat", scene);
+            wheel_mat.diffuseTexture = new BABYLON.Texture("https://assets.babylonjs.com/environments/wheel.png");
+            wheel_bl.material = wheel_mat;
+
+            const animWheel = new BABYLON.Animation("wheel_anim", "rotation.x", 30, BABYLON.Animation.ANIMATIONTYPE_FLOAT, BABYLON.Animation.ANIMATIONLOOPMODE_CYCLE);
+            const wheelKeys = [];
+            wheelKeys.push({ frame: 0, value: 0 });
+            wheelKeys.push({ frame: 30, value: 2 * Math.PI });
+            animWheel.setKeys(wheelKeys);
+            wheel_bl.animations = [];
+            wheel_bl.animations.push(animWheel);
+            console.log(scene);
+
+            const wheel_fr = wheel_bl.clone("wheel_fr");
+            wheel_fr.position.z = -0.4;
+
+            const wheel_br = wheel_fr.clone("wheel_br");
+            wheel_br.position.x = -0.5;
+
+            const wheel_fl = wheel_br.clone("wheel_fl");
+            wheel_fl.position.z = 0.4;
+
+            const carBodyMat = new BABYLON.StandardMaterial("car_body_mat", scene);
+            carBodyMat.diffuseTexture = new BABYLON.Texture("https://assets.babylonjs.com/environments/car.png");
+            car_body.material = carBodyMat;
+
+            const animCar = new BABYLON.Animation("car_anim", "position.z", 30, BABYLON.Animation.ANIMATIONTYPE_FLOAT, BABYLON.Animation.ANIMATIONLOOPMODE_CYCLE);
+            const carKey = [];
+            carKey.push({ frame: 0, value: -4 });
+            carKey.push({ frame: 150, value: 4 });
+            carKey.push({ frame: 210, value: 4 });
+            animCar.setKeys(carKey);
+            car_body.animations = [];
+            car_body.animations.push(animCar);
+
+
+            scene.beginAnimation(wheel_bl, 0, 30, true);
+            scene.beginAnimation(wheel_br, 0, 30, true);
+            scene.beginAnimation(wheel_fl, 0, 30, true);
+            scene.beginAnimation(wheel_fr, 0, 30, true);
+            scene.beginAnimation(car_body, 0, 210, true);
+            return car_body;
         }
 
         scene = createScene(); //Call the createScene function
